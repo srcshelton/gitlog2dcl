@@ -63,8 +63,8 @@ function processdata() {
 	(
 		local day month dom time year zone
 
-		#echo "$( basename "$( readlink -e '.' )" ) (__SEQ__${committags["${commit}"]:+-${committags["${commit}"]}}-${commit}) ${stable}; urgency=low"
-		echo "$( basename "$( readlink -e '.' )" ) (${num}) ${stable}; urgency=low"
+		#echo "$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' ) (__SEQ__${committags["${commit}"]:+-${committags["${commit}"]}}-${commit}) ${stable}; urgency=low"
+		echo "$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' ) (${num}) ${stable}; urgency=low"
 		echo
 		echo -n "  * commit ${commit}"
 		[[ -n "${committags["${commit}"]:-}" ]] && echo -e ", tag '${committags["${commit}"]}'\n" || echo $'\n'
@@ -222,6 +222,8 @@ function main() {
 	[[ -n "${1:-}" && "${1}" =~ [0-9]+ ]] && num="${1}"
 
 	(( trace )) && set -o xtrace
+
+	echo >&2 "Generating changelog for pacakge '$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' )'..."
 
 	if [[ -n "$( git tag )" ]]; then
 		echo >&2 "Enumerating tags, please wait..."
