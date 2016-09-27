@@ -35,11 +35,11 @@
 set -u
 set -o pipefail
 
-NAME="$( basename "$( readlink -e "${0}" )" )"
+declare debug="${DEBUG:-}"
+declare trace="${TRACE:-}"
 
-debug="${DEBUG:-}"
-trace="${TRACE:-}"
-
+declare NAME="$( basename "$( readlink -e "${0}" )" )"
+declare PKGNAME="${GITLOG2DCL_PKG_NAME:-}"
 declare -A committags=()
 
 function die() {
@@ -63,8 +63,8 @@ function processdata() {
 	(
 		local day month dom time year zone
 
-		#echo "$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' ) (__SEQ__${committags["${commit}"]:+-${committags["${commit}"]}}-${commit}) ${stable}; urgency=low"
-		echo "$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' ) (${num}) ${stable}; urgency=low"
+		#echo "${PKGNAME} (__SEQ__${committags["${commit}"]:+-${committags["${commit}"]}}-${commit}) ${stable}; urgency=low"
+		echo "${PKGNAME} (${num}) ${stable}; urgency=low"
 		echo
 		echo -n "  * commit ${commit}"
 		[[ -n "${committags["${commit}"]:-}" ]] && echo -e ", tag '${committags["${commit}"]}'\n" || echo $'\n'
@@ -217,13 +217,16 @@ function main() {
 	git rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
 		die "${NAME} must be executed from within a git repo"
 
+	[[ -z "${PKGNAME:-}" ]] && PKGNAME="$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' )"
+	[[ -z "${PKGNAME:-}" ]] && die "Could not determine package name"
+
 	local tag commit line
 	local -i num=0
 	[[ -n "${1:-}" && "${1}" =~ [0-9]+ ]] && num="${1}"
 
 	(( trace )) && set -o xtrace
 
-	echo >&2 "Generating changelog for pacakge '$( git remote show origin -n | grep -o 'Fetch URL: .*$' | cut -d' ' -f 3- | xargs basename | sed 's/\.git$//' )'..."
+	echo >&2 "Generating changelog for pacakge '${PKGNAME}'..."
 
 	if [[ -n "$( git tag )" ]]; then
 		echo >&2 "Enumerating tags, please wait..."
